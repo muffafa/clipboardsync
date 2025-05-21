@@ -323,6 +323,11 @@ class ClipboardSyncUI:
         self.network_manager.sync_enabled = enabled
         
     def _request_pairing(self, ip):
+        device = self.device_manager.get_device(ip)
+        if device and device.manually_disconnected:
+            # Clear the manual disconnect flag when explicitly requesting pairing
+            device.manually_disconnected = False
+            
         self.network_manager._request_pairing(ip)
         
     def _disconnect_device(self, ip):

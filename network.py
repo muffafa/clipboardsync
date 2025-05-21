@@ -94,8 +94,8 @@ class NetworkManager:
                         if device and device.status == DeviceStatus.PAIRED:
                             # Already paired device, just update last seen
                             self.device_manager.add_or_update_device(ip, message.sender_name)
-                        elif device and device.status == DeviceStatus.DISCONNECTED:
-                            # Previously paired, now reconnected
+                        elif device and device.status == DeviceStatus.DISCONNECTED and not device.manually_disconnected:
+                            # Previously paired and not manually disconnected, now reconnected
                             self.device_manager.add_or_update_device(ip, message.sender_name, DeviceStatus.PAIRED)
                             self.notify("Device Reconnected", f"{message.sender_name} ({ip}) is back online")
                         elif not device and self.discovery_enabled:

@@ -20,6 +20,7 @@ class Device:
         self.last_seen = time.time()
         self.status = DeviceStatus.DISCOVERED
         self.pairing_pending = False
+        self.manually_disconnected = False
         
     def update_seen(self):
         self.last_seen = time.time()
@@ -35,7 +36,8 @@ class Device:
             "receive_enabled": self.receive_enabled,
             "last_seen": self.last_seen,
             "status": self.status,
-            "pairing_pending": self.pairing_pending
+            "pairing_pending": self.pairing_pending,
+            "manually_disconnected": self.manually_disconnected
         }
         
 class DeviceManager:
@@ -141,6 +143,8 @@ class DeviceManager:
                 self.devices[ip].status = DeviceStatus.DISCONNECTED
                 self.devices[ip].send_enabled = False
                 self.devices[ip].receive_enabled = False
+                # Add a flag to prevent auto-reconnection from discovery
+                self.devices[ip].manually_disconnected = True
                 self.save_paired_devices()
                 self.notify_device_updates()
                 
@@ -148,11 +152,12 @@ class DeviceManager:
         paired_devices = {}
         with self.devices_lock:
             for ip, device in self.devices.items():
-                if device.status == DeviceStatus.PAIRED:
+                if device.status == DeviceStatus.PAIRED or device.manually_disconnected:
                     paired_devices[ip] = {
                         "hostname": device.hostname,
                         "send_enabled": device.send_enabled,
-                        "receive_enabled": device.receive_enabled
+                        "receive_enabled": device.receive_enabled,
+                        "manually_disconnected": device.manually_disconnected
                     }
         
         try:
@@ -176,6 +181,7 @@ class DeviceManager:
                         device.status = DeviceStatus.DISCONNECTED  # Start as disconnected until seen
                         device.send_enabled = device_data.get("send_enabled", False)
                         device.receive_enabled = device_data.get("receive_enabled", False)
+                        device.manually_disconnected = device_data.get("manually_disconnected", False)
                         self.devices[ip] = device
         except Exception as e:
             print(f"Error loading paired devices: {e}")
