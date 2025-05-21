@@ -1,12 +1,17 @@
 ### main.py
-
 import threading
-from server import start_server
-from client import broadcast_presence, listen_for_peers, monitor_clipboard, start_ui
+from device_manager import DeviceManager
+from network import NetworkManager
+from ui import ClipboardSyncUI
 
 if __name__ == "__main__":
-    threading.Thread(target=start_server, daemon=True).start()
-    threading.Thread(target=broadcast_presence, daemon=True).start()
-    threading.Thread(target=listen_for_peers, daemon=True).start()
-    threading.Thread(target=monitor_clipboard, daemon=True).start()
-    start_ui()
+    # Initialize components
+    device_manager = DeviceManager()
+    network_manager = NetworkManager(device_manager)
+    
+    # Start network manager
+    network_manager.start()
+    
+    # Start UI
+    ui = ClipboardSyncUI(device_manager, network_manager)
+    ui.start()
