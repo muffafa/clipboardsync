@@ -78,15 +78,16 @@ class ClipboardSyncUI:
             "disconnected": "#F44336" # Red
         }
         
-        # Register callbacks
+        # Create UI components first
+        self._create_ui()
+        
+        # Register callbacks AFTER UI components are created
         self.device_manager.register_device_updates_callback(self._update_device_list)
         self.device_manager.register_pairing_callback(self._handle_pairing_request)
         
         # Create notification manager
         self.notification_manager = NotificationManager(self.root)
         self.network_manager.register_notification_callback(self.notification_manager.show)
-        
-        self._create_ui()
         
     def _create_ui(self):
         main_frame = ttk.Frame(self.root, padding=10)
@@ -185,6 +186,12 @@ class ClipboardSyncUI:
         self.devices_canvas.itemconfig(self.devices_canvas_window, width=event.width)
         
     def _update_device_list(self):
+        # Check if UI components are initialized
+        if not hasattr(self, 'devices_inner_frame') or not self.devices_inner_frame.winfo_exists():
+            # UI is not ready yet, schedule an update for later
+            self.root.after(100, self._update_device_list)
+            return
+            
         # Clear existing widgets
         for widget in self.devices_inner_frame.winfo_children():
             widget.destroy()
